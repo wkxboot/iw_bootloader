@@ -1,0 +1,6 @@
+/iw_bootloader/board/iar/*
+!/iw_bootloader/board/iar/iw_bootloader.eww
+!/iw_bootloader/board/iar/iw_bootloader.ewd
+!/iw_bootloader/board/iar/iw_bootloader.ewp
+!/iw_bootloader/board/iar/iw_bootloader.icf
+!/iw_bootloader/board/iar/startup_LPC54606.s
