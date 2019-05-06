@@ -2,7 +2,7 @@
 #define  __UTILS_H__
 #include "stdbool.h"
 #include "stdint.h"
-
+#include "stdlib.h"
 
 typedef struct
 {
@@ -37,8 +37,7 @@ do {                                                \
 
 
 
-/*字节转换成HEX字符串*/
- void bytes_to_hex_str(const char *src,char *dest,uint16_t src_len);
+int bytes_to_hex_str(const char *src,char *dst,uint16_t src_len);
    
    
 /* 函数：utils_timer_init

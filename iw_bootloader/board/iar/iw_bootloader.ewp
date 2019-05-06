@@ -361,9 +361,11 @@
                     <state>$PROJ_DIR$/../../board/user/debug/log</state>
                     <state>$PROJ_DIR$/../../board/user/debug/log/SEGGER_RTT_V612j/RTT</state>
                     <state>$PROJ_DIR$/../../board/user/rtos</state>
-                    <state>$PROJ_DIR$/../../board/user/utils</state>
+                    <state>$PROJ_DIR$/../../board/user/lib</state>
                     <state>$PROJ_DIR$/../../board/user/flash_if</state>
+                    <state>$PROJ_DIR$/../../board/user/device_env</state>
                     <state>$PROJ_DIR$/../../board/user/crc16</state>
+                    <state>$PROJ_DIR$/../../board/user/md5</state>
                 </option>
                 <option>
                     <name>CCStdIncCheck</name>
@@ -2090,7 +2092,16 @@
         <group>
             <name>user</name>
             <group>
+                <name>bootloader</name>
+                <file>
+                    <name>$PROJ_DIR$\..\user\bootloader\bootloader.c</name>
+                </file>
+            </group>
+            <group>
                 <name>crc16</name>
+                <file>
+                    <name>$PROJ_DIR$\..\user\crc16\crc16.c</name>
+                </file>
             </group>
             <group>
                 <name>debug</name>
@@ -2132,6 +2143,12 @@
                 </file>
             </group>
             <group>
+                <name>md5</name>
+                <file>
+                    <name>$PROJ_DIR$\..\user\md5\md5.c</name>
+                </file>
+            </group>
+            <group>
                 <name>rtos</name>
                 <file>
                     <name>$PROJ_DIR$\..\user\rtos\cmsis_os.c</name>
@@ -2145,11 +2162,17 @@
             </group>
             <group>
                 <name>tasks</name>
+                <file>
+                    <name>$PROJ_DIR$\..\user\tasks\debug_task.c</name>
+                </file>
+                <file>
+                    <name>$PROJ_DIR$\..\user\tasks\tasks_init.c</name>
+                </file>
             </group>
             <group>
-                <name>utils</name>
+                <name>lib</name>
                 <file>
-                    <name>$PROJ_DIR$\..\user\utils\utils.c</name>
+                    <name>$PROJ_DIR$\..\user\lib\utils.c</name>
                 </file>
             </group>
         </group>

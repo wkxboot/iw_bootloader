@@ -5,10 +5,44 @@
 #include "utils.h"
 #include "cmsis_os.h"
 
+/*
+* @brief 字节转字符串
+* @param 要转换的数据
+* @param 字符串缓存
+* @param 进制
+* @return 0：成功 -1：失败
+* @note
+*/
+int uint32_to_str(uint32_t src,char *dst,uint8_t base)
+{
+    if (dst == NULL) {
+        return -1;
+    }
+    if (base == 10) {
+        snprintf(dst,7,"%d",src);
+    } else {
+        snprintf(dst,5,"%X",src);
+    }
 
-/*字节转换成HEX字符串*/
- void bytes_to_hex_str(const char *src,char *dest,uint16_t src_len)
+    return 0;
+}
+/*
+* @brief 数组转成HEX字符串
+* @param
+* @param
+* @return 
+* @note
+*/
+
+ int bytes_to_hex_str(const char *src,char *dst,uint16_t src_len)
  {
+    if (src == NULL || dst == NULL) {
+        return -1;
+    }
+    for (uint16_t i = 0;i < src_len;i ++) {
+        uint32_to_str(*(src + i),dst + i * 2,16);
+    }
+/*
     char temp;
     char hex_digital[] = {'0','1','2','3','4','5','6','7','8','9','A','B','C','D','E','F'};
     for (uint16_t i = 0; i < src_len; i++){  
@@ -17,8 +51,9 @@
         dest[2 * i + 1] = hex_digital[temp & 0x0f];  
     }
     dest[src_len * 2] = '\0';
+*/
+return 0;
 }
-
 
 /* 函数：utils_timer_init
 *  功能：自定义定时器初始化

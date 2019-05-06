@@ -22,14 +22,13 @@
 *                                                                            
 *                                                                            
 *****************************************************************************/
-#define  DEVICE_STATUS_VALID          0xA5A5
-#define  DEVICE_STATUS_INVALID        0x5A5A
+#define  DEVICE_ENV_DATA_SIZE_LIMIT   (DEVICE_ENV_SIZE_LIMIT - 2)
+
 
 typedef struct
 {
     uint16_t crc;
-    uint16_t status;
-    uint8_t  env[DEVICE_ENV_SIZE_LIMIT - 4];
+    uint8_t  data_region[DEVICE_ENV_DATA_SIZE_LIMIT];
 }device_env_t;
 
 static device_env_t device_env;
@@ -43,7 +42,7 @@ static device_env_t device_env;
 */
 static char device_env_get_char(int index) 
 {
-    return *((char *)(&device_env.env[0] + index));
+    return *((char *)(&device_env.data_region[0] + index));
 }
 
 /*
@@ -55,7 +54,7 @@ static char device_env_get_char(int index)
 */
 static char * device_env_get_addr(int index)
 {
-    return (char *)(&device_env.env[0] + index);
+    return (char *)(&device_env.data_region[0] + index);
 }
 
 /*
@@ -88,7 +87,7 @@ static int device_env_match(char *name,int index2)
 */
 static void device_env_crc_update() 
 {
-    device_env.crc = calculate_crc16(device_env.env,DEVICE_ENV_SIZE_LIMIT - 4);
+    device_env.crc = calculate_crc16(device_env.data_region,DEVICE_ENV_DATA_SIZE_LIMIT);
 }
 
 /*
@@ -96,39 +95,105 @@ static void device_env_crc_update()
 * @param
 * @param
 * @return 
+* @note
+*/
+static int device_env_crc_check() 
+{
+    return device_env.crc == calculate_crc16(device_env.data_region,DEVICE_ENV_DATA_SIZE_LIMIT) ? 1 : 0;
+}
+
+/*
+* @brief 环境变量值保存到非易存储体
+* @param name 无
+* @return 0：成功 -1：失败
+* @note
+*/
+static int device_env_do_save(void) 
+{
+    int rc;
+    rc = flash_if_erase(DEVICE_ENV_BASE_ADDR,sizeof(device_env_t));
+    if (rc != 0) {
+        log_error("do save err.\r\n");
+        return -1;
+    }
+
+    rc = flash_if_write(DEVICE_ENV_BASE_ADDR,(uint8_t*)&device_env,sizeof(device_env_t));
+    if (rc != 0) {
+        log_error("do save err.\r\n");
+        return -1;
+    }
+
+#if DEVICE_ENV_USE_BACKUP > 0 /*环境变量备份*/
+
+    rc = flash_if_erase(DEVICE_ENV_BACKUP_BASE_ADDR,sizeof(device_env_t));
+    if (rc != 0) {
+        log_error("do backup save err.\r\n");
+        return -1;
+    }
+
+    rc = flash_if_write(DEVICE_ENV_BACKUP_BASE_ADDR,(uint8_t*)&device_env,sizeof(device_env_t));
+    if (rc != 0) {
+        log_error("do backup save err.\r\n");
+        return -1;
+    }
+
+#endif
+
+    log_debug("do save ok.\r\n");
+    return 0;
+}
+/*
+* @brief 环境变量初始化
+* @param 无
+* @return 0：成功 -1：失败
 * @note
 */
 int device_env_init(void) 
 {
     int rc;
-    uint16_t crc;
+
     /*读取设备环境变量*/
     rc = flash_if_read(DEVICE_ENV_BASE_ADDR,(uint8_t*)&device_env,sizeof(device_env_t));
     if (rc != 0) {
-        log_error("read env err .code:%d.\r\n",rc);
-        device_env.status = DEVICE_STATUS_INVALID;
+        log_error("read env err.code:%d.\r\n",rc);
         return -1;
     }
     /*对比校验值*/
-    crc = device_env_crc(&device_env.env[0],DEVICE_ENV_SIZE_LIMIT - 4);
-    if (crc != device_env.crc) {
-        log_warning("crc bad. ");
-        memset(&device_env,0xFF,sizeof(device_env_t));
+    rc = device_env_crc_check();
+    if (!rc) {
+        log_warning("env crc bad. ");
+
+#if DEVICE_ENV_USE_BACKUP > 0 
+        log_debug("read backup env...\r\n");
+        rc = flash_if_read(DEVICE_ENV_BACKUP_BASE_ADDR,(uint8_t*)&device_env,sizeof(device_env_t));
+        if (rc != 0) {
+            log_error("read backup env err.code:%d.\r\n",rc);
+            return -1;
+        }
+        /*如果备份环境变量是有效的，就使用备份*/
+        rc = device_env_crc_check();
+        if (rc) {
+            log_warning("backup env crc ok. ");
+            return 0;
+        }
+        log_warning("backup crc bad. ");
+#endif
+        /*如果环境变量无效 初始化为0*/
+        memset(&device_env,0x00,sizeof(device_env_t));
     } else {
-        log_warning("crc ok. ");
+        log_warning("env crc ok. ");
     }
-    device_env.status = DEVICE_STATUS_VALID;
+
     return 0;
 }
 
 /*
-* @brief 
-* @param
-* @param
-* @return 
+* @brief 获取对应名称的环境变量值
+* @param name 环境变量名
+* @return 环境变量值 or null
 * @note
 */
-char *device_env_read(char *name) 
+char *device_env_get(char *name) 
 {
     int i, next;
     for (i=0; device_env_get_char(i) != '\0'; i = next + 1) {
@@ -149,15 +214,15 @@ char *device_env_read(char *name)
 }
 
 /*
-* @brief 
-* @param
-* @param
-* @return 
+* @brief 设置环境变量值
+* @param name 环境变量名
+* @param value 环境变量值
+* @return 0：成功 -1：失败
 * @note
 */
-int device_env_save(char *name,char *value) 
+int device_env_set(char *name,char *value) 
 {
-    int   i, len, oldval;
+    int  len, oldval;
 
     char *env, *next = NULL;
 
@@ -201,8 +266,8 @@ int device_env_save(char *name,char *value)
     }
     /* Delete only ? */
     if (value == NULL) {
-        device_env_crc_update ();
-        return 0;
+        device_env_crc_update();
+        return device_env_do_save();
     }
 
     /*
@@ -221,7 +286,7 @@ int device_env_save(char *name,char *value)
     /* add '=' for first arg, ' ' for all others */
     len += strlen(value) + 1;
 
-    if (len > (&env_data[DEVICE_ENV_SIZE_LIMIT - 4] - env)) {
+    if (len > (&env_data[DEVICE_ENV_DATA_SIZE_LIMIT] - env)) {
         log_error("## Error: environment overflow, \"%s\" deleted\n", name);
         return 1;
     }
@@ -241,5 +306,5 @@ int device_env_save(char *name,char *value)
 
     /* Update CRC */
     device_env_crc_update();
-    return 0;
+    return device_env_do_save();
 }

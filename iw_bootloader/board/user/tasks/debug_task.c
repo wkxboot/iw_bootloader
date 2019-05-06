@@ -2,8 +2,7 @@
 #include "cmsis_os.h"
 #include "cpu_utils.h"
 #include "debug_task.h"
-#include "lock_task.h"
-#include "tasks_init.h"
+#include "device_env.h"
 #include "log.h"
 
 osThreadId   debug_task_hdl;
@@ -17,11 +16,12 @@ osThreadId   debug_task_hdl;
 */
 void debug_task(void const * argument)
 {
-    osStatus   status;
+    int rc;
     char cmd[20];
     uint8_t level;
     uint8_t read_cnt;
-    lock_task_message_t lock_msg;
+    char *read;
+    device_env_init();
 
     while (1) {
         osDelay(DEBUG_TASK_INTERVAL); 
@@ -38,22 +38,45 @@ void debug_task(void const * argument)
         if (strncmp(cmd,"cpu",strlen("cpu")) == 0) {
            log_info("cpu:%d%%.",osGetCPUUsage());
         }
-        /*开锁*/
-        if (strncmp(cmd,"unlock",strlen("unlock")) == 0) {
-            lock_msg.request.type = LOCK_TASK_MSG_TYPE_DEBUG_UNLOCK_LOCK;
-            status = osMessagePut(lock_task_msg_q_id,(uint32_t)&lock_msg,0);
-            if (status != osOK) {
-                log_error("debug put unlock msg err:%d.\r\n",status);
-            }
+        /*读*/
+        if (strncmp(cmd,"read",strlen("read")) == 0) {
+           read = device_env_get("ip_addr");
+           if (read) {
+              log_debug("ip_addr=%s.\r\n",read);
+           } else {
+              log_debug("ip_addr is null.\r\n");
+           }
         }
-        /*关锁*/
-        if (strncmp(cmd,"lock",strlen("lock")) == 0) {
-            lock_msg.request.type = LOCK_TASK_MSG_TYPE_DEBUG_LOCK_LOCK;
-            status = osMessagePut(lock_task_msg_q_id,(uint32_t)&lock_msg,0);
-            if (status != osOK) {
-                log_error("debug put lock msg err:%d.\r\n",status);
-            }
+
+        /*写*/
+        if (strncmp(cmd,"write",strlen("write")) == 0) {
+           rc = device_env_set("ip_addr",&cmd[6]);
+           if (rc == 0) {
+              log_debug("write ok.\r\n");
+           } else {
+              log_error("write err.\r\n");
+           }
         }
+        /*读*/
+        if (strncmp(cmd,"date",strlen("date")) == 0) {
+           read = device_env_get("date");
+           if (read) {
+              log_debug("date=%s.\r\n",read);
+           } else {
+              log_debug("date is null.\r\n");
+           }
+        }
+
+        /*写*/
+        if (strncmp(cmd,"set",strlen("set")) == 0) {
+           rc = device_env_set("date",&cmd[4]);
+           if (rc == 0) {
+              log_debug("date ok.\r\n");
+           } else {
+              log_error("date err.\r\n");
+           }
+        }
+
  
  
     }
