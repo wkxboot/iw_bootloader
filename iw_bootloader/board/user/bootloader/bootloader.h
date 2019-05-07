@@ -6,8 +6,25 @@ extern "C" {
 #endif
 
 #define  BOOTLOADER_PROGRAM_SIZE                             1024
-#define  BOOTLOADER_REBOOT_DELAY_MS                          5000 
 
+
+/*
+* @brief 
+* @param
+* @param
+* @return 
+* @note
+*/
+int bootloader_bootloader(void);
+
+/*
+* @brief 
+* @param
+* @param
+* @return 
+* @note
+*/
+int bootloader_copy_new_image_to_update_region(uint8_t *src,uint32_t size);
 
 
 

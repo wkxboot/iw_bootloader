@@ -17,13 +17,13 @@
 *                                                                            
 *                                                                            
 *****************************************************************************/
+#include "fsl_common.h"
 #include "device_env.h"
 #include "flash_if.h"
 #include "bootloader.h"
 #include "md5.h"
 #include "utils.h"
 #include "log.h"
-
 
 /*
 * @brief 
@@ -140,43 +140,6 @@ static int bootloader_copy_backup_image_to_application_region(uint32_t size)
 * @return 
 * @note
 */
-int bootloader_copy_new_image_to_update_region(uint8_t *src,uint32_t size)
-{
-    int rc;
-    static uint32_t addr = APPLICATION_UPDATE_BASE_ADDR;
-
-    if ((size & (DEVICE_MIN_ERASE_SIZE - 1)) != 0 || size == 0) {
-        log_error("err not align with erase size:%d.\r\n",DEVICE_MIN_ERASE_SIZE);
-        goto err_handle;
-    }
-    /*先擦除*/  
-    rc = flash_if_erase(addr,size);
-    if (rc != 0) {
-        goto err_handle;
-    }
-    /*然后编程写入*/
-    rc = flash_if_write(addr,src,size);
-    if (rc != 0) {
-        goto err_handle;
-    }
-    /*更新地址*/
-    addr += size;
-    log_debug("copy %d bytes new image to update region ok \r\n",size);
-    return 0;
-
-err_handle:
-    log_error("copy new image err.\r\n");
-    addr = APPLICATION_UPDATE_BASE_ADDR;
-    return -1;
-}
-
-/*
-* @brief 
-* @param
-* @param
-* @return 
-* @note
-*/
 static int bootloader_first_boot_init()
 {
 #define  SIZE_STR_BUFFER_SIZE       7
@@ -186,6 +149,7 @@ static int bootloader_first_boot_init()
     char md5_value[16];
     char size_str_buffer[7];
 
+    log_debug("start first boot init...\r\n");
     /*设置应用程序size默认为最大值*/
     snprintf(size_str_buffer,SIZE_STR_BUFFER_SIZE,"%d",APPLICATION_SIZE_LIMIT);
     rc = device_env_set(ENV_BOOTLOADER_APPLICATION_SIZE_NAME,size_str_buffer);
@@ -193,22 +157,17 @@ static int bootloader_first_boot_init()
         log_error("err in set application size.\r\n");
         goto err_handle;
     }
-    /*计算并设置MD5*/
+    /*计算MD5*/
+    log_debug("calculate app md5...\r\n");
     md5((char*)APPLICATION_BASE_ADDR,APPLICATION_SIZE_LIMIT,md5_value);
-    bytes_to_hex_str(md5_value,md5_str_buffer,16);
-        
+    dump_hex_str(md5_value,md5_str_buffer,16);
+    /*设置MD5*/    
     rc = device_env_set(ENV_BOOTLOADER_APPLICATION_MD5_NAME,md5_str_buffer);
     if (rc != 0) {
         log_error("err in set application md5.\r\n");
         goto err_handle;
     }
     
-    /*标记状态为正常模式*/
-    rc = device_env_set(ENV_BOOTLOADER_FLAG_NAME,ENV_BOOTLOADER_NORMAL);
-    if (rc != 0) {
-        log_error("err in set bootloader flag.\r\n");
-        goto err_handle;
-    }
     log_debug("first boot init ok.\r\n");
     return 0;
 
@@ -235,6 +194,8 @@ static int bootloader_backup()
     char md5_str_buffer[33];
     char md5_value[16];
 
+    log_debug("start backup...\r\n");
+    /*读取当前应用的size和MD5*/
     size_str = device_env_get(ENV_BOOTLOADER_APPLICATION_SIZE_NAME);
     md5_str = device_env_get(ENV_BOOTLOADER_APPLICATION_MD5_NAME);
     if (size_str == NULL || md5_str == NULL) {
@@ -249,12 +210,13 @@ static int bootloader_backup()
     }
     /*校验拷贝后的MD5*/
     md5((char*)APPLICATION_BACKUP_BASE_ADDR,size,md5_value);
-    bytes_to_hex_str(md5_value,md5_str_buffer,16);
+    dump_hex_str(md5_value,md5_str_buffer,16);
 
     if (strcmp(md5_str,md5_str_buffer) != 0) {
         log_error("backup md5 err.cal:%s config:%s.\r\n",md5_str_buffer,md5_str);
         goto err_handle;
     }
+    /*设置备份区size和MD5*/
     log_debug("app backup md5 ok.\r\n");
     rc = device_env_set(ENV_BOOTLOADER_BACKUP_SIZE_NAME,size_str);
     if (rc != 0) {
@@ -289,6 +251,8 @@ static int bootloader_recovery()
     char md5_str_buffer[33];
     char md5_value[16];
 
+    log_debug("start recovery...\r\n");
+    /*读取备份应用的size和MD5*/
     size_str = device_env_get(ENV_BOOTLOADER_BACKUP_SIZE_NAME);
     md5_str = device_env_get(ENV_BOOTLOADER_BACKUP_MD5_NAME);
     if (size_str == NULL || md5_str == NULL) {
@@ -303,13 +267,14 @@ static int bootloader_recovery()
     }
     /*校验拷贝后的MD5*/
     md5((char*)APPLICATION_BASE_ADDR,size,md5_value);
-    bytes_to_hex_str(md5_value,md5_str_buffer,16);
+    dump_hex_str(md5_value,md5_str_buffer,16);
 
     if (strcmp(md5_str,md5_str_buffer) != 0) {
         log_error("application md5 err.cal:%s config:%s.\r\n",md5_str_buffer,md5_str);
         goto err_handle;
     }
     log_debug("app md5 ok.\r\n");
+    /*设置当前应用的size和MD5*/
     rc = device_env_set(ENV_BOOTLOADER_APPLICATION_SIZE_NAME,size_str);
     if (rc != 0) {
         goto err_handle;
@@ -343,6 +308,8 @@ static int bootloader_update()
     char md5_str_buffer[33];
     char md5_value[16];
 
+    log_debug("start update...\r\n");
+    /*读取更新区的size和MD5*/
     size_str = device_env_get(ENV_BOOTLOADER_UPDATE_SIZE_NAME);
     md5_str = device_env_get(ENV_BOOTLOADER_UPDATE_MD5_NAME);
     if (size_str == NULL || md5_str == NULL) {
@@ -353,7 +320,7 @@ static int bootloader_update()
 
     /*校验更新区的MD5*/
     md5((char*)APPLICATION_UPDATE_BASE_ADDR,size,md5_value);
-    bytes_to_hex_str(md5_value,md5_str_buffer,16);
+    dump_hex_str(md5_value,md5_str_buffer,16);
 
     if (strcmp(md5_str,md5_str_buffer) != 0) {
         log_error("update md5 err.cal:%s config:%s.\r\n",md5_str_buffer,md5_str);
@@ -362,29 +329,23 @@ static int bootloader_update()
     log_debug("update md5 ok.\r\n");
 
     /*从更新区拷贝到应用区*/
-    rc = bootloader_copy_backup_image_to_application_region(size);
+    rc = bootloader_copy_update_image_to_application_region(size);
     if (rc != 0) {
         goto err_handle;
     }
 
-    /*再次校验应用区数据*/
-    size_str = device_env_get(ENV_BOOTLOADER_APPLICATION_SIZE_NAME);
-    md5_str = device_env_get(ENV_BOOTLOADER_APPLICATION_MD5_NAME);
-    if (size_str == NULL || md5_str == NULL) {
-        log_error("app size or md5 is null.\r\n");
-        goto err_handle;
-    }
+    /*校验应用区MD5*/
     size = atoi(size_str);        
     /*MD5*/
     md5((char*)APPLICATION_BASE_ADDR,size,md5_value);
-    bytes_to_hex_str(md5_value,md5_str_buffer,16);
+    dump_hex_str(md5_value,md5_str_buffer,16);
 
     if (strcmp(md5_str,md5_str_buffer) != 0) {
-        log_error("app md5 err.cal:%s config:%s.\r\n",md5_str_buffer,md5_str);
+        log_error("apfter. app md5 err.cal:%s config:%s.\r\n",md5_str_buffer,md5_str);
         goto err_handle;
     }
-    log_debug("update md5 ok.\r\n");
-
+    log_debug("copy app md5 ok.\r\n");
+    /*设置应用的size和MD5*/
     rc = device_env_set(ENV_BOOTLOADER_APPLICATION_SIZE_NAME,size_str);
     if (rc != 0) {
         goto err_handle;
@@ -401,7 +362,57 @@ err_handle:
     return -1;
 }
   
-        
+/*
+* @brief 
+* @param
+* @param
+* @return 
+* @note
+*/
+static void bootloader_reboot(void)
+{
+    volatile uint32_t delay = 50000000;
+
+    log_warning("reboot...\r\n");
+    /*等待日志输出完毕*/
+    while(delay-- );
+
+    __NVIC_SystemReset();
+}
+
+typedef void (*application_t)(void);   
+/*
+* @brief 
+* @param
+* @param
+* @return 
+* @note
+*/
+static void bootloader_jump_to_application(void)
+{
+    volatile uint32_t delay = 50000000;
+
+    application_t application;
+    uint32_t user_application_msp;
+    uint32_t user_app_addr;
+
+    /*初始化栈指针*/
+    user_application_msp = *(uint32_t*)(APPLICATION_BASE_ADDR);
+    /*获取用户APP地址*/
+    user_app_addr = *(uint32_t*)(APPLICATION_BASE_ADDR + 4);
+
+    log_warning("boot user app --> addr:0x%X stack:0x%X....\r\n",user_app_addr,user_application_msp);
+
+    /*等待日志输出完毕*/
+    while(delay -- );
+    application = (application_t)user_app_addr;
+   /*跳转*/
+    __disable_irq();
+    __set_MSP(user_application_msp);
+    application(); 
+    while(1);
+
+}  
 
 /*
 * @brief 
@@ -419,29 +430,81 @@ int bootloader_bootloader(void)
     flag = device_env_get(ENV_BOOTLOADER_FLAG_NAME);
     /*无参数 第一次启动*/
     if (flag == NULL) {
-        log_debug("first boot.\r\n");
+        log_debug("application not boot ever.\r\n");
+        /*跳转到应用开始执行*/
+        bootloader_jump_to_application();
+    } else if (strcmp(flag,ENV_BOOTLOADER_INIT) == 0) {  
+        /*初始模式*/
         rc = bootloader_first_boot_init();
-
-    /*正常模式 跳转到应用程序*/
+        if (rc != 0) {
+            /*重启重新初始化*/
+            bootloader_reboot(); 
+        } else {
+            /*标记状态为正常模式*/
+            log_debug("set flag normal...\r\n");
+            device_env_set(ENV_BOOTLOADER_FLAG_NAME,ENV_BOOTLOADER_NORMAL);
+            /*跳转到应用开始执行*/
+            bootloader_jump_to_application();
+        }
+    /*NORMAL正常模式 跳转到应用程序*/
     } else if (strcmp(flag,ENV_BOOTLOADER_NORMAL) == 0) {  
+        /*跳转到应用开始执行*/
         bootloader_jump_to_application();
         
-    /*有更新标志，启动更新*/
-    } else if (strcmp(flag,ENV_BOOTLOADER_UPDATE) == 0) { 
+    /*NEW标志，启动更新*/
+    } else if (strcmp(flag,ENV_BOOTLOADER_NEW) == 0) { 
         rc = bootloader_backup();
-        
+        if (rc != 0) {
+            /*备份失败 强制设置为正常状态*/
+            log_debug("set flag normal...\r\n");
+            device_env_set(ENV_BOOTLOADER_FLAG_NAME,ENV_BOOTLOADER_NORMAL);
+        } else {
+            /*备份成功 设置为UPDATE模式*/
+            log_debug("set flag update...\r\n");
+            device_env_set(ENV_BOOTLOADER_FLAG_NAME,ENV_BOOTLOADER_UPDATE);
+            /*重启进入UPDATE模式*/
+            bootloader_reboot();
+        }
+
+    /*UPDATE标志,拷贝更新数据到应用区*/
+    } else if (strcmp(flag,ENV_BOOTLOADER_UPDATE) == 0) { 
+        /*覆盖新数据*/
         rc = bootloader_update();
+        /*不论是否升级成功 设置为COMPLETE模式,可以随时恢复*/
+        log_debug("set flag complete...\r\n");
+        device_env_set(ENV_BOOTLOADER_FLAG_NAME,ENV_BOOTLOADER_COMPLETE);
+        if (rc != 0 ) {
+            /*升级失败 重启进入恢复模式*/
+            bootloader_reboot();    
+        } else {
+            /*跳转到应用开始执行*/
+            bootloader_jump_to_application();
+        }
         
-    /*有更新完成标志 证明应用程序没有升级成功*/
+    /*CPOMPLETE标志 证明应用程序不是我们想要的或者意外断电，进入恢复模式*/
     } else if (strcmp(flag,ENV_BOOTLOADER_COMPLETE) == 0) {  
         rc = bootloader_recovery();
+        if (rc != 0) {
+            /*重启再次尝试*/
+            bootloader_reboot();   
+        } else {
+            /*恢复成功 设置为NORMAL模式*/
+            log_debug("set flag normal...\r\n");
+            device_env_set(ENV_BOOTLOADER_FLAG_NAME,ENV_BOOTLOADER_NORMAL);
+            /*跳转到应用开始执行*/
+            bootloader_jump_to_application();
+        }
 
-    /*有OK标志 证明应用程序升级成功 置为正常模式*/
+    /*OK标志 证明应用程序升级成功 置为正常模式*/
     } else if (strcmp(flag,ENV_BOOTLOADER_OK) == 0) {  
-        rc = bootloader_recovery();
+            /*被升级后的应用置为OK，升级真正成功。 设置为NORMAL模式*/
+            log_debug("set flag normal...\r\n");
+            device_env_set(ENV_BOOTLOADER_FLAG_NAME,ENV_BOOTLOADER_NORMAL);
+            /*跳转到应用开始执行*/
+            bootloader_jump_to_application();
     }
 
-
+    return -1;
 }
 
 

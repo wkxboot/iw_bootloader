@@ -349,9 +349,6 @@
                     <state>$PROJ_DIR$/../../CMSIS/Include</state>
                     <state>$PROJ_DIR$/../../device/LPC54606</state>
                     <state>$PROJ_DIR$/../../device/LPC54606/drivers</state>
-                    <state>$PROJ_DIR$/../../rtos/amazon-freertos/lib/include</state>
-                    <state>$PROJ_DIR$/../../rtos/amazon-freertos/lib/include/private</state>
-                    <state>$PROJ_DIR$/../../rtos/amazon-freertos/lib/FreeRTOS/portable/IAR/ARM_CM4F</state>
                     <state>$PROJ_DIR$/../../board/bsp</state>
                     <state>$PROJ_DIR$/../../board/user</state>
                     <state>$PROJ_DIR$/../../board/user/serial</state>
@@ -360,12 +357,11 @@
                     <state>$PROJ_DIR$/../../board/user/debug/cpu</state>
                     <state>$PROJ_DIR$/../../board/user/debug/log</state>
                     <state>$PROJ_DIR$/../../board/user/debug/log/SEGGER_RTT_V612j/RTT</state>
-                    <state>$PROJ_DIR$/../../board/user/rtos</state>
                     <state>$PROJ_DIR$/../../board/user/lib</state>
                     <state>$PROJ_DIR$/../../board/user/flash_if</state>
                     <state>$PROJ_DIR$/../../board/user/device_env</state>
-                    <state>$PROJ_DIR$/../../board/user/crc16</state>
-                    <state>$PROJ_DIR$/../../board/user/md5</state>
+                    <state>$PROJ_DIR$/../../board/user/bootloader</state>
+                    <state>$PROJ_DIR$/../../board/user/firmware_version</state>
                 </option>
                 <option>
                     <name>CCStdIncCheck</name>
@@ -2098,19 +2094,7 @@
                 </file>
             </group>
             <group>
-                <name>crc16</name>
-                <file>
-                    <name>$PROJ_DIR$\..\user\crc16\crc16.c</name>
-                </file>
-            </group>
-            <group>
                 <name>debug</name>
-                <group>
-                    <name>cpu</name>
-                    <file>
-                        <name>$PROJ_DIR$\..\user\debug\cpu\cpu_utils.c</name>
-                    </file>
-                </group>
                 <group>
                     <name>log</name>
                     <group>
@@ -2143,36 +2127,21 @@
                 </file>
             </group>
             <group>
-                <name>md5</name>
-                <file>
-                    <name>$PROJ_DIR$\..\user\md5\md5.c</name>
-                </file>
-            </group>
-            <group>
-                <name>rtos</name>
-                <file>
-                    <name>$PROJ_DIR$\..\user\rtos\cmsis_os.c</name>
-                </file>
-                <file>
-                    <name>$PROJ_DIR$\..\user\rtos\freertos.c</name>
-                </file>
-                <file>
-                    <name>$PROJ_DIR$\..\user\rtos\main.c</name>
-                </file>
-            </group>
-            <group>
-                <name>tasks</name>
-                <file>
-                    <name>$PROJ_DIR$\..\user\tasks\debug_task.c</name>
-                </file>
-                <file>
-                    <name>$PROJ_DIR$\..\user\tasks\tasks_init.c</name>
-                </file>
-            </group>
-            <group>
                 <name>lib</name>
                 <file>
+                    <name>$PROJ_DIR$\..\user\lib\crc16.c</name>
+                </file>
+                <file>
+                    <name>$PROJ_DIR$\..\user\lib\md5.c</name>
+                </file>
+                <file>
                     <name>$PROJ_DIR$\..\user\lib\utils.c</name>
+                </file>
+            </group>
+            <group>
+                <name>main</name>
+                <file>
+                    <name>$PROJ_DIR$\..\user\main\main.c</name>
                 </file>
             </group>
         </group>
@@ -2308,44 +2277,5 @@
     </group>
     <group>
         <name>middleware</name>
-    </group>
-    <group>
-        <name>rtos</name>
-        <group>
-            <name>port</name>
-            <file>
-                <name>$PROJ_DIR$\..\..\rtos\amazon-freertos\lib\FreeRTOS\portable\IAR\ARM_CM4F\fsl_tickless_systick.c</name>
-            </file>
-            <file>
-                <name>$PROJ_DIR$\..\..\rtos\amazon-freertos\lib\FreeRTOS\portable\MemMang\heap_4.c</name>
-            </file>
-            <file>
-                <name>$PROJ_DIR$\..\..\rtos\amazon-freertos\lib\FreeRTOS\portable\IAR\ARM_CM4F\port.c</name>
-            </file>
-            <file>
-                <name>$PROJ_DIR$\..\..\rtos\amazon-freertos\lib\FreeRTOS\portable\IAR\ARM_CM4F\portasm.s</name>
-            </file>
-        </group>
-        <group>
-            <name>src</name>
-            <file>
-                <name>$PROJ_DIR$\..\..\rtos\amazon-freertos\lib\FreeRTOS\event_groups.c</name>
-            </file>
-            <file>
-                <name>$PROJ_DIR$\..\..\rtos\amazon-freertos\lib\FreeRTOS\list.c</name>
-            </file>
-            <file>
-                <name>$PROJ_DIR$\..\..\rtos\amazon-freertos\lib\FreeRTOS\queue.c</name>
-            </file>
-            <file>
-                <name>$PROJ_DIR$\..\..\rtos\amazon-freertos\lib\FreeRTOS\stream_buffer.c</name>
-            </file>
-            <file>
-                <name>$PROJ_DIR$\..\..\rtos\amazon-freertos\lib\FreeRTOS\tasks.c</name>
-            </file>
-            <file>
-                <name>$PROJ_DIR$\..\..\rtos\amazon-freertos\lib\FreeRTOS\timers.c</name>
-            </file>
-        </group>
     </group>
 </project>

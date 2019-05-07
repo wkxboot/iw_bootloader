@@ -20,13 +20,13 @@ extern "C" {
 #define  APPLICATION_UPDATE_BASE_ADDR          0x0003C000UL /*application更新基地址*/
 
 #define  DEVICE_MIN_ERASE_SIZE                 256          /*最小擦除单元大小 bytes*/
-#define  DEVICE_ADDR_MAP_LIMIT                 0x80000      /*设备最大地址映射*/    
+#define  DEVICE_ADDR_MAP_LIMIT                 0x00080000   /*设备最大地址映射*/    
     
 #define  DEVICE_ENV_BASE_ADDR                  0x00055000   /*环境变量基地址*/   
 
-#define  DEVICE_ENV_BACKUP_BASE_ADDR           0x00055100   /*环境变量备份基地址*/      
+#define  DEVICE_ENV_BACKUP_BASE_ADDR           0x00055200   /*环境变量备份基地址*/      
      
-#define  DEVICE_ENV_SIZE_LIMIT                 (DEVICE_MIN_ERASE_SIZE * 1)   /*环境变量大小*/ 
+#define  DEVICE_ENV_SIZE_LIMIT                 (DEVICE_MIN_ERASE_SIZE * 2)   /*环境变量大小*/ 
 
 
 /********************    配置设备环境结束    **************************************/
@@ -72,10 +72,13 @@ extern "C" {
 #define  ENV_BOOTLOADER_APPLICATION_MD5_NAME       "app_md5"
 #define  ENV_BOOTLOADER_BACKUP_MD5_NAME            "backup_md5"
 
-#define  ENV_BOOTLOADER_NORMAL                     "NORMAL"
-#define  ENV_BOOTLOADER_UPDATE                     "UPDATE"
-#define  ENV_BOOTLOADER_COMPLETE                   "COMPLETE"
-#define  ENV_BOOTLOADER_OK                         "OK"
+/*bootloader状态标志*/
+#define  ENV_BOOTLOADER_INIT                       "INIT"    /*初始模式*/
+#define  ENV_BOOTLOADER_NORMAL                     "NORMAL"  /*正常启动模式*/
+#define  ENV_BOOTLOADER_NEW                        "NEW"     /*进入更新模式*/
+#define  ENV_BOOTLOADER_UPDATE                     "UPDATE"  /*已经备份完毕，正在拷贝更新的数据模式*/
+#define  ENV_BOOTLOADER_COMPLETE                   "COMPLETE"/*更新的数据已复制完毕模式*/
+#define  ENV_BOOTLOADER_OK                         "OK"      /*升级成功模式*/
 
 
 

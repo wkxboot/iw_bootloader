@@ -32,13 +32,22 @@ int flash_if_init(void);
 int flash_if_read(uint32_t addr,uint8_t *dst,uint32_t size);
 
 /*
-* @brief 擦除指定地址数据
+* @brief 擦除指定地址数据(页擦除)
 * @param addr 擦除开始地址
 * @param size 擦除数据量
 * @return 0：成功 -1：失败
 * @note
 */
 int flash_if_erase(uint32_t addr,uint32_t size);
+
+/*
+* @brief 扇区擦除指定地址数据
+* @param addr 擦除开始地址
+* @param size 擦除数据量
+* @return 0：成功 -1：失败
+* @note
+*/
+int flash_if_erase_sector(uint32_t addr,uint32_t size);
 
 /*
 * @brief flash_if_write 数据编程写入
