@@ -25,37 +25,49 @@
 #include "utils.h"
 #include "log.h"
 
+/*内部静态写缓存*/
+static uint8_t write_buffer[BOOTLOADER_PROGRAM_SIZE];
+
+
 /*
-* @brief 
-* @param
-* @param
-* @return 
-* @note
+* @brief 从flash地址src处拷贝size个字节到flash地址dst处
+* @param from flash源地址
+* @param from flash目的地址
+* @param size flash拷贝数量
+* @return 0：成功 -1：失败
+* @note 先从flash读到ram中再写入flash
 */
-static int bootloader_copy_image(uint32_t from,uint32_t to,uint32_t size)
+static int bootloader_copy_image(const uint32_t from,const uint32_t to,const uint32_t size)
 {
     int rc;
     uint32_t src_addr = from;
     uint32_t dst_addr = to;
-    uint32_t write_size,write_total = 0;
+    uint32_t write_total = 0;
 
+    /*擦除目的数据区*/
+    rc = flash_if_erase(dst_addr,size);
+    if (rc != 0) {
+        goto err_handle;
+    }
+
+    /*多次写入*/
     while (write_total < size) {
-        write_size = (size - write_total) > BOOTLOADER_PROGRAM_SIZE ?  BOOTLOADER_PROGRAM_SIZE : (size - write_total);
-        /*先擦除*/  
-        rc = flash_if_erase(dst_addr,write_size);
+        /*先读取*/  
+        rc = flash_if_read(src_addr,write_buffer,BOOTLOADER_PROGRAM_SIZE);
         if (rc != 0) {
             goto err_handle;
         }
         /*然后编程写入*/
-        rc = flash_if_write(dst_addr,(uint8_t*)src_addr,write_size);
+        rc = flash_if_write(dst_addr,write_buffer,BOOTLOADER_PROGRAM_SIZE);
         if (rc != 0) {
             goto err_handle;
         }
-        log_debug("copy %d bytes from  addr:%d to addr:%d ok \r\n",write_size,src_addr,dst_addr);
+
+        log_debug("copy %d bytes from  addr:%d to addr:%d ok \r\n",BOOTLOADER_PROGRAM_SIZE,src_addr,dst_addr);
         /*更新地址*/
-        dst_addr += write_size;
-        src_addr += write_size;
-        write_total += dst_addr += write_size;;
+        dst_addr += BOOTLOADER_PROGRAM_SIZE;
+        src_addr += BOOTLOADER_PROGRAM_SIZE;
+        write_total += BOOTLOADER_PROGRAM_SIZE;;
     }
     return 0;
 
@@ -64,83 +76,15 @@ err_handle:
     return -1;
 }
 
-/*
-* @brief 
-* @param
-* @param
-* @return 
-* @note
-*/
-static int bootloader_copy_update_image_to_application_region(uint32_t size)
-{
-    int rc;
-
-    log_debug("start copy %d bytes update image to application region...\r\n",size);
-    rc = bootloader_copy_image(APPLICATION_UPDATE_BASE_ADDR,APPLICATION_BASE_ADDR,size);
-    if (rc == 0) {
-        log_debug("copy update image to application region ok.\r\n");
-        return 0;
-    }
-
-    log_error("copy update image to application region err.\r\n");
-    return -1;
-
-
-}
 
 /*
-* @brief 
+* @brief bootloader在应用程序第一次启动后进行的初始化
+* @param 无
 * @param
-* @param
-* @return 
+* @return 0：成功 -1：失败
 * @note
 */
-static int bootloader_copy_application_image_to_backup_region(uint32_t size)
-{
-    int rc;
-
-    log_debug("start copy %d bytes application image to backup region...\r\n",size);
-    rc = bootloader_copy_image(APPLICATION_BASE_ADDR,APPLICATION_BACKUP_BASE_ADDR,size);
-    if (rc == 0) {
-        log_debug("copy application image to backup region ok.\r\n");
-        return 0;
-    }
-
-    log_error("copy application image to backup region err.\r\n");
-    return -1;
-}
-
-/*
-* @brief 
-* @param
-* @param
-* @return 
-* @note
-*/
-static int bootloader_copy_backup_image_to_application_region(uint32_t size)
-{
-    int rc;
-
-    log_debug("start copy %d bytes backup image to application region...\r\n",size);
-    rc = bootloader_copy_image(APPLICATION_BACKUP_BASE_ADDR,APPLICATION_BASE_ADDR,size);
-    if (rc == 0) {
-        log_debug("copy backup image to application region ok.\r\n");
-        return 0;
-    }
-
-    log_error("copy backup image to application region err.\r\n");
-    return -1;
-}
-
-
-/*
-* @brief 
-* @param
-* @param
-* @return 
-* @note
-*/
-static int bootloader_first_boot_init()
+static int bootloader_first_boot_init(void)
 {
 #define  SIZE_STR_BUFFER_SIZE       7
     int rc;
@@ -178,10 +122,10 @@ err_handle:
    
   
 /*
-* @brief 
+* @brief 备份数据
 * @param
 * @param
-* @return 
+* @return 0：成功 -1：失败
 * @note
 */
 static int bootloader_backup()
@@ -204,10 +148,13 @@ static int bootloader_backup()
     }
     size = atoi(size_str);        
     
-    rc = bootloader_copy_application_image_to_backup_region(size);
+    log_debug("start copy %d bytes application image to backup region...\r\n",size);
+    rc = bootloader_copy_image(APPLICATION_BASE_ADDR,APPLICATION_BACKUP_BASE_ADDR,size);
     if (rc != 0) {
+        log_error("copy application image to backup region err.\r\n");
         goto err_handle;
     }
+    log_debug("copy application image to backup region ok.\r\n");
     /*校验拷贝后的MD5*/
     md5((char*)APPLICATION_BACKUP_BASE_ADDR,size,md5_value);
     dump_hex_str(md5_value,md5_str_buffer,16);
@@ -235,10 +182,10 @@ err_handle:
 }
 
 /*
-* @brief 
+* @brief 恢复数据
 * @param
 * @param
-* @return 
+* @return 0：成功 -1：失败
 * @note
 */
 static int bootloader_recovery()
@@ -261,10 +208,14 @@ static int bootloader_recovery()
     }
     size = atoi(size_str);        
     
-    rc = bootloader_copy_backup_image_to_application_region(size);
+    log_debug("start copy %d bytes backup image to application region...\r\n",size);
+    rc = bootloader_copy_image(APPLICATION_BACKUP_BASE_ADDR,APPLICATION_BASE_ADDR,size);
     if (rc != 0) {
+        log_error("copy backup image to application region err.\r\n");
         goto err_handle;
     }
+    log_debug("copy backup image to application region ok.\r\n");
+
     /*校验拷贝后的MD5*/
     md5((char*)APPLICATION_BASE_ADDR,size,md5_value);
     dump_hex_str(md5_value,md5_str_buffer,16);
@@ -292,10 +243,10 @@ err_handle:
 }
 
 /*
-* @brief 
+* @brief 更新数据
 * @param
 * @param
-* @return 
+* @return 0：成功 -1：失败
 * @note
 */
 static int bootloader_update()
@@ -329,13 +280,16 @@ static int bootloader_update()
     log_debug("update md5 ok.\r\n");
 
     /*从更新区拷贝到应用区*/
-    rc = bootloader_copy_update_image_to_application_region(size);
+    log_debug("start copy %d bytes update image to application region...\r\n",size);
+    rc = bootloader_copy_image(APPLICATION_UPDATE_BASE_ADDR,APPLICATION_BASE_ADDR,size);
+
     if (rc != 0) {
+        log_error("copy update image to application region err.\r\n");
         goto err_handle;
     }
+    log_debug("copy update image to application region ok.\r\n");
 
-    /*校验应用区MD5*/
-    size = atoi(size_str);        
+    /*校验应用区*/   
     /*MD5*/
     md5((char*)APPLICATION_BASE_ADDR,size,md5_value);
     dump_hex_str(md5_value,md5_str_buffer,16);
@@ -363,10 +317,10 @@ err_handle:
 }
   
 /*
-* @brief 
+* @brief 重新启动
 * @param
 * @param
-* @return 
+* @return 无
 * @note
 */
 static void bootloader_reboot(void)
@@ -382,10 +336,10 @@ static void bootloader_reboot(void)
 
 typedef void (*application_t)(void);   
 /*
-* @brief 
+* @brief 跳转到应用程序
 * @param
-* @param
-* @return 
+* @param 无
+* @return 无
 * @note
 */
 static void bootloader_jump_to_application(void)
@@ -415,10 +369,10 @@ static void bootloader_jump_to_application(void)
 }  
 
 /*
-* @brief 
+* @brief bootloader主程序
 * @param
-* @param
-* @return 
+* @param 无
+* @return 0：成功 -1：失败
 * @note
 */
 int bootloader_bootloader(void)

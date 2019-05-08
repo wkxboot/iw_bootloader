@@ -14,7 +14,7 @@
 
 void hal_delay(void)
 {
-    volatile uint32_t sleep = 50000000;
+    volatile uint32_t sleep = 100000000;
   
     while (sleep --);
 }

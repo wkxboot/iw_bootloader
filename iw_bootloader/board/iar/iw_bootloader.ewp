@@ -356,12 +356,17 @@
                     <state>$PROJ_DIR$/../../board/user/tasks</state>
                     <state>$PROJ_DIR$/../../board/user/debug/cpu</state>
                     <state>$PROJ_DIR$/../../board/user/debug/log</state>
+                    <state>$PROJ_DIR$/../../board/user/debug/log/serial_uart</state>
+                    <state>$PROJ_DIR$/../../board/user/debug/log/printf</state>
                     <state>$PROJ_DIR$/../../board/user/debug/log/SEGGER_RTT_V612j/RTT</state>
                     <state>$PROJ_DIR$/../../board/user/lib</state>
                     <state>$PROJ_DIR$/../../board/user/flash_if</state>
                     <state>$PROJ_DIR$/../../board/user/device_env</state>
                     <state>$PROJ_DIR$/../../board/user/bootloader</state>
                     <state>$PROJ_DIR$/../../board/user/firmware_version</state>
+                    <state>$PROJ_DIR$/../../board/user/serial</state>
+                    <state>$PROJ_DIR$/../../board/user/circle_buffer</state>
+                    <state>$PROJ_DIR$/../../board/user/serial_uart_hal</state>
                 </option>
                 <option>
                     <name>CCStdIncCheck</name>
@@ -2094,9 +2099,21 @@
                 </file>
             </group>
             <group>
+                <name>circle_buffer</name>
+                <file>
+                    <name>$PROJ_DIR$\..\user\circle_buffer\circle_buffer.c</name>
+                </file>
+            </group>
+            <group>
                 <name>debug</name>
                 <group>
                     <name>log</name>
+                    <group>
+                        <name>printf</name>
+                        <file>
+                            <name>$PROJ_DIR$\..\user\debug\log\printf\printf.c</name>
+                        </file>
+                    </group>
                     <group>
                         <name>segger_rtt</name>
                         <file>
@@ -2107,6 +2124,12 @@
                         </file>
                         <file>
                             <name>$PROJ_DIR$\..\user\debug\log\SEGGER_RTT_V612j\Syscalls\SEGGER_RTT_Syscalls_IAR.c</name>
+                        </file>
+                    </group>
+                    <group>
+                        <name>serial_uart</name>
+                        <file>
+                            <name>$PROJ_DIR$\..\user\debug\log\serial_uart\log_serial_uart.c</name>
                         </file>
                     </group>
                     <file>
@@ -2142,6 +2165,18 @@
                 <name>main</name>
                 <file>
                     <name>$PROJ_DIR$\..\user\main\main.c</name>
+                </file>
+            </group>
+            <group>
+                <name>serial</name>
+                <file>
+                    <name>$PROJ_DIR$\..\user\serial\serial.c</name>
+                </file>
+            </group>
+            <group>
+                <name>serial_uart_hal</name>
+                <file>
+                    <name>$PROJ_DIR$\..\user\serial_uart_hal\nxp_serial_uart_hal_driver.c</name>
                 </file>
             </group>
         </group>

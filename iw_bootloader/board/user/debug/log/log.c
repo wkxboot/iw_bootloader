@@ -1,3 +1,4 @@
+#include "log.h"
 /*****************************************************************************
 *  log库函数                                                          
 *  Copyright (C) 2019 wkxboot 1131204425@qq.com.                             
@@ -17,7 +18,7 @@
 *                                                                            
 *                                                                            
 *****************************************************************************/
-#include "log.h"
+
 #if  LOG_USE_RTT > 0
 #include "SEGGER_RTT.h"
 #endif
@@ -99,7 +100,7 @@ int log_printf(uint8_t level,const char *format,...)
 {
     int rc = 0;
     uint32_t size;
-    char log_print_buffer[LOG_PRINTF_BUFFER_SIZE];
+    static char log_print_buffer[LOG_PRINTF_BUFFER_SIZE];
     va_list ap;
     
     va_start(ap,format);
