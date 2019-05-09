@@ -168,11 +168,11 @@ static int bootloader_backup()
     }
     /*设置备份区size和MD5*/
     log_debug("app backup md5 ok.\r\n");
-    rc = device_env_set(ENV_BOOTLOADER_BACKUP_SIZE_NAME,size_str);
+    rc = device_env_set(ENV_BOOTLOADER_BACKUP_SIZE_NAME,size_str_buffer);
     if (rc != 0) {
         goto err_handle;
     }
-    rc = device_env_set(ENV_BOOTLOADER_BACKUP_MD5_NAME,md5_str);
+    rc = device_env_set(ENV_BOOTLOADER_BACKUP_MD5_NAME,md5_str_buffer);
     if (rc != 0) {
         goto err_handle;
     }
@@ -232,11 +232,11 @@ static int bootloader_recovery()
     }
     log_debug("app md5 ok.\r\n");
     /*设置当前应用的size和MD5*/
-    rc = device_env_set(ENV_BOOTLOADER_APPLICATION_SIZE_NAME,size_str);
+    rc = device_env_set(ENV_BOOTLOADER_APPLICATION_SIZE_NAME,size_str_buffer);
     if (rc != 0) {
         goto err_handle;
     }
-    rc = device_env_set(ENV_BOOTLOADER_APPLICATION_MD5_NAME,md5_str);
+    rc = device_env_set(ENV_BOOTLOADER_APPLICATION_MD5_NAME,md5_str_buffer);
     if (rc != 0) {
         goto err_handle;
     }
@@ -307,7 +307,7 @@ static int bootloader_update()
         log_error("apfter. app md5 err.cal:%s config:%s.\r\n",md5_str_buffer,md5_str);
         goto err_handle;
     }
-    log_debug("copy app md5 ok.\r\n");
+    log_debug("copyed app md5 ok.\r\n");
     /*设置应用的size和MD5*/
     rc = device_env_set(ENV_BOOTLOADER_APPLICATION_SIZE_NAME,size_str_buffer);
     if (rc != 0) {
