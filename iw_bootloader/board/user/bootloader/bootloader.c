@@ -28,7 +28,7 @@
 /*内部静态写缓存*/
 static uint8_t write_buffer[BOOTLOADER_PROGRAM_SIZE];
 
-
+#define  SIZE_STR_BUFFER_SIZE       7
 /*
 * @brief 从flash地址src处拷贝size个字节到flash地址dst处
 * @param from flash源地址
@@ -86,14 +86,14 @@ err_handle:
 */
 static int bootloader_first_boot_init(void)
 {
-#define  SIZE_STR_BUFFER_SIZE       7
     int rc;
 
     char md5_str_buffer[33];
     char md5_value[16];
-    char size_str_buffer[7];
+    char size_str_buffer[SIZE_STR_BUFFER_SIZE];
 
     log_debug("start first boot init...\r\n");
+
     /*设置应用程序size默认为最大值*/
     snprintf(size_str_buffer,SIZE_STR_BUFFER_SIZE,"%d",APPLICATION_SIZE_LIMIT);
     rc = device_env_set(ENV_BOOTLOADER_APPLICATION_SIZE_NAME,size_str_buffer);
@@ -134,6 +134,7 @@ static int bootloader_backup()
     int size;
     
     char *size_str;
+    char size_str_buffer[SIZE_STR_BUFFER_SIZE];
     char *md5_str;
     char md5_str_buffer[33];
     char md5_value[16];
@@ -146,8 +147,10 @@ static int bootloader_backup()
         log_error("app size or md5 is null.\r\n");
         goto err_handle;
     }
-    size = atoi(size_str);        
-    
+    size = atoi(size_str);   
+    /*dump size字符串*/
+    snprintf(size_str_buffer,SIZE_STR_BUFFER_SIZE,"%d",size);
+
     log_debug("start copy %d bytes application image to backup region...\r\n",size);
     rc = bootloader_copy_image(APPLICATION_BASE_ADDR,APPLICATION_BACKUP_BASE_ADDR,size);
     if (rc != 0) {
@@ -194,6 +197,7 @@ static int bootloader_recovery()
     int size;
     
     char *size_str;
+    char size_str_buffer[SIZE_STR_BUFFER_SIZE];
     char *md5_str;
     char md5_str_buffer[33];
     char md5_value[16];
@@ -207,6 +211,8 @@ static int bootloader_recovery()
         goto err_handle;
     }
     size = atoi(size_str);        
+    /*dump size字符串*/
+    snprintf(size_str_buffer,SIZE_STR_BUFFER_SIZE,"%d",size);
     
     log_debug("start copy %d bytes backup image to application region...\r\n",size);
     rc = bootloader_copy_image(APPLICATION_BACKUP_BASE_ADDR,APPLICATION_BASE_ADDR,size);
@@ -255,6 +261,7 @@ static int bootloader_update()
     int size;
     
     char *size_str;
+    char size_str_buffer[SIZE_STR_BUFFER_SIZE];
     char *md5_str;
     char md5_str_buffer[33];
     char md5_value[16];
@@ -267,7 +274,9 @@ static int bootloader_update()
         log_error("update size or md5 is null.\r\n");
         goto err_handle;
     }
-    size = atoi(size_str);        
+    size = atoi(size_str);  
+    /*dump size字符串*/
+    snprintf(size_str_buffer,SIZE_STR_BUFFER_SIZE,"%d",size);
 
     /*校验更新区的MD5*/
     md5((char*)APPLICATION_UPDATE_BASE_ADDR,size,md5_value);
@@ -300,11 +309,11 @@ static int bootloader_update()
     }
     log_debug("copy app md5 ok.\r\n");
     /*设置应用的size和MD5*/
-    rc = device_env_set(ENV_BOOTLOADER_APPLICATION_SIZE_NAME,size_str);
+    rc = device_env_set(ENV_BOOTLOADER_APPLICATION_SIZE_NAME,size_str_buffer);
     if (rc != 0) {
         goto err_handle;
     }
-    rc = device_env_set(ENV_BOOTLOADER_APPLICATION_MD5_NAME,md5_str);
+    rc = device_env_set(ENV_BOOTLOADER_APPLICATION_MD5_NAME,md5_str_buffer);
     if (rc != 0) {
         goto err_handle;
     }

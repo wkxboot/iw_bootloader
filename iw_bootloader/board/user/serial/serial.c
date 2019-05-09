@@ -49,6 +49,30 @@ int serial_read(serial_handle_t *handle,char *dst,int size)
 }
 
 /*
+* @brief 串口输出缓存可用空间
+* @param handle 串口句柄
+* @param 
+* @param 
+* @return < 0 错误
+* @return >= 0 可写入的数量
+* @note 可重入
+*/
+int serial_writeable(serial_handle_t *handle)
+{
+    int free_size;
+
+    if (handle->init == false){
+        return -1;
+    }
+
+    SERIAL_ENTER_CRITICAL();
+    free_size = circle_buffer_free_size(&handle->send);
+    SERIAL_EXIT_CRITICAL();
+
+    return free_size;
+}
+
+/*
 * @brief  从串口非阻塞的写入指定数量的数据
 * @param handle 串口句柄
 * @param src 数据源地址
@@ -172,19 +196,15 @@ int serial_close(serial_handle_t *handle)
 * @return = 0 成功
 * @note 
 */
-int serial_register_hal_driver(int handle,serial_hal_driver_t *driver)
+int serial_register_hal_driver(serial_handle_t *handle,serial_hal_driver_t *driver)
 {
-    serial_handle_t *s;
- 
-    s=(serial_handle_t *)handle; 
-
-    log_assert(driver);
-    log_assert(driver->init);
-    log_assert(driver->deinit);
-    log_assert(driver->enable_txe_it);
-    log_assert(driver->disable_txe_it);
-    log_assert(driver->enable_rxne_it);
-    log_assert(driver->disable_rxne_it);
+    assert(driver);
+    assert(driver->init);
+    assert(driver->deinit);
+    assert(driver->enable_txe_it);
+    assert(driver->disable_txe_it);
+    assert(driver->enable_rxne_it);
+    assert(driver->disable_rxne_it);
 
     handle->driver = driver;
     handle->registered = true;
@@ -202,7 +222,7 @@ int serial_register_hal_driver(int handle,serial_hal_driver_t *driver)
 * @return = 0 成功
 * @note 
 */
-int isr_serial_get_byte_to_send(int handle,char *byte_send)
+int isr_serial_get_byte_to_send(serial_handle_t *handle,char *byte_send)
 {
     int size;
 
@@ -228,16 +248,11 @@ int isr_serial_get_byte_to_send(int handle,char *byte_send)
 * @return = 0 成功
 * @note 
 */
-int isr_serial_put_byte_from_recv(int handle,char recv_byte)
+int isr_serial_put_byte_from_recv(serial_handle_t *handle,char recv_byte)
 {
- 
     int size;
-    serial_handle_t *s;
 
-    s=(serial_handle_t *)handle;	
- 
     if (handle->init == false){
-        log_error("serial handle:%d not open.\r\n",handle);
         return -1;
     } 
     SERIAL_ENTER_CRITICAL();
@@ -260,7 +275,7 @@ int isr_serial_put_byte_from_recv(int handle,char recv_byte)
 * @return < 0 失败
 * @note     rx_size和tx_size必须是2的x次方
 */
-int serial_create(serial_handle_t *handle,uint8_t *rx_buffer,uint32_t rx_size,uint8_t tx_buffer,uint32_t tx_size)
+int serial_create(serial_handle_t *handle,uint8_t *rx_buffer,uint32_t rx_size,uint8_t *tx_buffer,uint32_t tx_size)
 { 
 
     if (!IS_POWER_OF_TWO(rx_size)) {
@@ -333,15 +348,11 @@ int serial_select(serial_handle_t *handle,uint32_t timeout)
 * @return > 0 实际发送的数据量
 * @note 
 */
-int serial_complete(int handle,uint32_t timeout)
+int serial_complete(serial_handle_t *handle,uint32_t timeout)
 {
-    utils_timer_t timer;
-    serial_handle_t *s;
-
-    s =(serial_handle_t *)handle;	 
+    utils_timer_t timer; 
 
     if (handle->init == false){
-        log_error("serial handle:%d not open.\r\n",handle);
         return -1;
     } 
     utils_timer_init(&timer,timeout,false);
@@ -353,4 +364,5 @@ int serial_complete(int handle,uint32_t timeout)
     return circle_buffer_used_size(&handle->send);
 }
 
+#endif
 
