@@ -361,6 +361,7 @@
                     <state>$PROJ_DIR$/../../board/user/debug/log/SEGGER_RTT_V612j/RTT</state>
                     <state>$PROJ_DIR$/../../board/user/lib</state>
                     <state>$PROJ_DIR$/../../board/user/flash_if</state>
+                    <state>$PROJ_DIR$/../../board/user/eeprom_if</state>
                     <state>$PROJ_DIR$/../../board/user/device_env</state>
                     <state>$PROJ_DIR$/../../board/user/bootloader</state>
                     <state>$PROJ_DIR$/../../board/user/firmware_version</state>
@@ -2141,6 +2142,12 @@
                 <name>device_env</name>
                 <file>
                     <name>$PROJ_DIR$\..\user\device_env\device_env.c</name>
+                </file>
+            </group>
+            <group>
+                <name>eeprom_if</name>
+                <file>
+                    <name>$PROJ_DIR$\..\user\eeprom_if\eeprom_if.c</name>
                 </file>
             </group>
             <group>

@@ -27,12 +27,13 @@ void hal_delay(void)
 */
 void main(void )
 {
-    char *value;;
+    char *value;
 
+    bsp_board_init();
     log_init();
     log_info("bootloader version:%s\r\n",FIRMWARE_VERSION_STR);
 
-    bsp_board_init();
+
     device_env_init();
 
     /*输出存在的环境变量*/
