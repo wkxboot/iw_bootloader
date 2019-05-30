@@ -92,7 +92,7 @@ static int bootloader_first_boot_init(void)
     char md5_value[16];
     char size_str_buffer[SIZE_STR_BUFFER_SIZE];
 
-    log_debug("start first boot init...\r\n");
+    log_warning("start first boot init...\r\n");
 
     /*设置应用程序size默认为最大值*/
     snprintf(size_str_buffer,SIZE_STR_BUFFER_SIZE,"%d",APPLICATION_SIZE_LIMIT);
@@ -112,7 +112,7 @@ static int bootloader_first_boot_init(void)
         goto err_handle;
     }
     
-    log_debug("first boot init ok.\r\n");
+    log_warning("first boot init ok.\r\n");
     return 0;
 
 err_handle:
@@ -139,7 +139,7 @@ static int bootloader_backup()
     char md5_str_buffer[33];
     char md5_value[16];
 
-    log_debug("start backup...\r\n");
+    log_warning("start backup...\r\n");
     /*读取当前应用的size和MD5*/
     size_str = device_env_get(ENV_BOOTLOADER_APPLICATION_SIZE_NAME);
     md5_str = device_env_get(ENV_BOOTLOADER_APPLICATION_MD5_NAME);
@@ -176,7 +176,7 @@ static int bootloader_backup()
     if (rc != 0) {
         goto err_handle;
     }
-    log_error("app backup ok.\r\n");
+    log_warning("app backup ok.\r\n");
     return 0;
 
 err_handle:
@@ -202,7 +202,7 @@ static int bootloader_recovery()
     char md5_str_buffer[33];
     char md5_value[16];
 
-    log_debug("start recovery...\r\n");
+    log_warning("start recovery...\r\n");
     /*读取备份应用的size和MD5*/
     size_str = device_env_get(ENV_BOOTLOADER_BACKUP_SIZE_NAME);
     md5_str = device_env_get(ENV_BOOTLOADER_BACKUP_MD5_NAME);
@@ -240,7 +240,7 @@ static int bootloader_recovery()
     if (rc != 0) {
         goto err_handle;
     }
-    log_error("app recovery ok.\r\n");
+    log_warning("app recovery ok.\r\n");
     return 0;
 
 err_handle:
@@ -266,7 +266,7 @@ static int bootloader_update()
     char md5_str_buffer[33];
     char md5_value[16];
 
-    log_debug("start update...\r\n");
+    log_warning("start update...\r\n");
     /*读取更新区的size和MD5*/
     size_str = device_env_get(ENV_BOOTLOADER_UPDATE_SIZE_NAME);
     md5_str = device_env_get(ENV_BOOTLOADER_UPDATE_MD5_NAME);
@@ -317,7 +317,7 @@ static int bootloader_update()
     if (rc != 0) {
         goto err_handle;
     }
-    log_error("app update ok.\r\n");
+    log_warning("app update ok.\r\n");
     return 0;
 
 err_handle:

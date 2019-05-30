@@ -14,7 +14,7 @@
 
 
 #define  LOG_UART_RX_BUFFER_SIZE              32
-#define  LOG_UART_TX_BUFFER_SIZE              8192
+#define  LOG_UART_TX_BUFFER_SIZE              25600
 
 
 #define  LOG_UART_PORT                        2

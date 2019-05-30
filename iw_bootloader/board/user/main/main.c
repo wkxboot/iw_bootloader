@@ -33,7 +33,6 @@ void main(void )
     log_init();
     log_info("bootloader version:%s\r\n",FIRMWARE_VERSION_STR);
 
-
     device_env_init();
 
     /*输出存在的环境变量*/
