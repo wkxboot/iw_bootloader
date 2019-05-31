@@ -109,7 +109,7 @@ static void device_env_crc_update(void)
 */
 static int device_env_crc_check(device_env_t *env) 
 {
-    log_assert(env == NULL);
+    log_assert(env);
     
     return env->crc == calculate_crc16(env->data_region,DEVICE_ENV_DATA_SIZE_LIMIT) ? 0 : -1;
 }
@@ -220,7 +220,7 @@ int device_env_init(void)
         log_error("env if init err.\r\n");
         return -1;
     }
-    
+    log_warning("read env...\r\n");    
     /*读取环境变量*/
     rc = device_env_read(DEVICE_ENV_BASE_ADDR,(uint8_t*)&device_env,sizeof(device_env_t));
     if (rc != 0) {
